@@ -11,9 +11,10 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Middleware;
 use Psr\Log\LoggerInterface;
 
-class GuzzleHttpClient extends Client implements ClientInterface
+class GuzzleHttpClient implements ClientInterface
 {
 
+    public $client;
     public $debug;
     public $httpLogAdapter;
 
@@ -30,7 +31,7 @@ class GuzzleHttpClient extends Client implements ClientInterface
             );
         }
 
-        parent::__construct($config);
+        $this->client = new Client($config);
     }
 
     /**
@@ -39,7 +40,7 @@ class GuzzleHttpClient extends Client implements ClientInterface
     public function getXmlRpcTransport()
     {
 
-        $adapter = new \Http\Adapter\Guzzle6\Client($this);
+        $adapter = new \Http\Adapter\Guzzle7\Client($this->client);
 
         return new HttpAdapterTransport(new \Http\Message\MessageFactory\DiactorosMessageFactory(),
             $adapter);
@@ -55,7 +56,7 @@ class GuzzleHttpClient extends Client implements ClientInterface
      * @return mixed
      * @throws HttpException
      */
-    public function request($method, $uri = null, array $options = [])
+    public function request($method, $uri, array $options)
     {
         if ( ! isset($options['headers'])) {
             $options['headers'] = [];
@@ -67,7 +68,7 @@ class GuzzleHttpClient extends Client implements ClientInterface
 
         try {
             $request  = new Request($method, $uri, $options['headers'], $options['body']);
-            $response = $this->send($request);
+            $response = $this->client->send($request);
 
             return $response->getBody();
         } catch (BadResponseException $e) {
